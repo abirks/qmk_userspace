@@ -5,7 +5,6 @@
 #define _FN 1
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
-
   /* QWERTY layer
    * ╔═══════╤═══════╤═══════╤═══════╤═══════╤═══════╗                       ╔═══════╤═══════╤═══════╤═══════╤═══════╤═══════╗
    * ║       │  !    │  " @  │  # £  │  ¤ $  │  %    ║                       ║  &    │  / {  │  ( [  │  ) ]  │  = }  │  ?    ║
@@ -59,49 +58,82 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
 };
 
-
-//SSD1306 OLED update loop, make sure to enable OLED_ENABLE=yes in rules.mk
+// OLED update loop, make sure to set OLED_ENABLE = yes in rules.mk
 #ifdef OLED_ENABLE
 
-oled_rotation_t oled_init_user(oled_rotation_t rotation) {
-  if (!is_keyboard_master())
-    return OLED_ROTATION_180;  // flips the display 180 degrees if offhand
-  return rotation;
+// abirks logo. Edited using https://joric.github.io/qle/
+static const char PROGMEM abirks_logo[] = {
+  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,240, 14,  1,  1,  1, 14,240,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,224,224,224,224,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,224,224,224,224,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,224,224,224,224,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+  0,  0,  0,  0,  0, 24, 36, 68, 66,130,130,130,130,132, 68,255, 36, 40,152,144,152, 40, 36,255, 68,132,132,130,130,130, 66, 68, 36, 24,  0,  0,  0,  0,  0,  0, 96, 96,120,120,120,120,120,120,120,120,248,248,224,224,  0,  0,255,255,255,255,224,224,120,120,120,120,248,248,224,224,128,128,  0,  0,249,249,249,249,  0,  0,248,248,248,248,224,224,120,120,120,120,  0,  0,255,255,255,255,  0,  0,128,128,224,224,120,120, 24, 24,  0,  0,224,224,248,248,120,120,120,120,120,120, 96, 96,  0,  0,  0,  0,  0,  0,  0,  0, 
+  0,  0,  0,  0,  0, 24, 36, 34, 66, 65, 65, 65, 33, 33, 34,255, 36, 20, 25,  9, 25, 20, 36,255, 34, 33, 33, 65, 65, 65, 66, 34, 36, 24,  0,  0,  0,  0,  0,  0,248,248,254,254,134,134,134,134,134,134,255,255,255,255,  0,  0,255,255,255,255,225,225,128,128,128,128,225,225,255,255,127,127,  0,  0,255,255,255,255,  0,  0,255,255,255,255,  1,  1,  0,  0,  0,  0,  0,  0,255,255,255,255, 30, 30,127,127,249,249,224,224,128,128,  0,  0,135,135,159,159,158,158,158,158,254,254,248,248,  0,  0,  0,  0,  0,  0,  0,  0, 
+  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 15,112,128,128,128,112, 15,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  7,  7,  7,  7,  7,  7,  7,  7,  1,  1,  7,  7,  0,  0,  7,  7,  7,  7,  1,  1,  7,  7,  7,  7,  7,  7,  1,  1,  0,  0,  0,  0,  7,  7,  7,  7,  0,  0,  7,  7,  7,  7,  0,  0,  0,  0,  0,  0,  0,  0,  7,  7,  7,  7,  0,  0,  0,  0,  1,  1,  7,  7,  7,  7,  0,  0,  1,  1,  7,  7,  7,  7,  7,  7,  7,  7,  1,  1,  0,  0,  0,  0,  0,  0,  0,  0,
+};
+
+static const char PROGMEM filled_circle[] = {
+  0b00111100,
+  0b01111110,
+  0b11111111,
+  0b11111111,
+  0b11111111,
+  0b11111111,
+  0b01111110,
+  0b00111100
+};
+
+static const char PROGMEM empty_circle[] = {
+  0b00111100,
+  0b01000010,
+  0b10000001,
+  0b10000001,
+  0b10000001,
+  0b10000001,
+  0b01000010,
+  0b00111100
+};
+
+static void draw_circle(bool filled, int x, int y, const char *label) {
+    oled_set_cursor(x, y);
+    oled_write_raw_P(filled ? filled_circle : empty_circle, sizeof(filled_circle));
+    oled_set_cursor(x+2, y);
+    oled_write(label, false);
 }
 
-// When you add source files to SRC in rules.mk, you can use functions.
-const char *read_layer_state(void);
-const char *read_logo(void);
-void set_keylog(uint16_t keycode, keyrecord_t *record);
-const char *read_keylog(void);
-const char *read_keylogs(void);
+static void render_mod_status(void) {
+  uint8_t mods = get_mods() | get_oneshot_mods();;
+  
+  bool is_shift = mods & MOD_MASK_SHIFT;
+  bool is_ctrl = mods & MOD_MASK_CTRL;
+  bool is_fn = layer_state_is(_FN);
+  bool is_alt = mods & MOD_BIT(KC_LALT);
+  bool is_altgr = mods & MOD_BIT(KC_RALT);
 
-// const char *read_mode_icon(bool swap);
-// const char *read_host_led_state(void);
-// void set_timelog(void);
-// const char *read_timelog(void);
+  draw_circle(is_shift, 1, 2, "Sh");
+  draw_circle(is_ctrl, 1, 4, "Ct");
+  draw_circle(is_fn, 1, 6, "Fn");
+  draw_circle(is_alt, 1, 8, "A");
+  draw_circle(is_altgr, 1, 10, "AG");
+}
+
+oled_rotation_t oled_init_user(oled_rotation_t rotation) {
+  if (is_keyboard_master()) {
+    return OLED_ROTATION_270;
+  } else {
+    return OLED_ROTATION_180;
+  }
+}
 
 bool oled_task_user(void) {
   if (is_keyboard_master()) {
-    // If you want to change the display of OLED, you need to change here
-    oled_write_ln(read_layer_state(), false);
-    oled_write_ln(read_keylog(), false);
-    oled_write_ln(read_keylogs(), false);
-    //oled_write_ln(read_mode_icon(keymap_config.swap_lalt_lgui), false);
-    //oled_write_ln(read_host_led_state(), false);
-    //oled_write_ln(read_timelog(), false);
+    render_mod_status();
   } else {
-    oled_write(read_logo(), false);
+    oled_write_raw_P(abirks_logo, sizeof(abirks_logo));
   }
-    return false;
+  return false;
 }
 #endif // OLED_ENABLE
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   if (record->event.pressed) {
-#ifdef OLED_ENABLE
-    set_keylog(keycode, record);
-#endif
     // set_timelog();
   }
   return true;
